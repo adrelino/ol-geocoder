@@ -76,4 +76,23 @@ export default [
       buble({ target: { ie: 11 } }),
     ],
   },
+  {
+    external,
+    input: './src/base.js',
+    output: {
+      banner,
+      globals,
+      file: './dist/ol-geocoder.mjs',
+      format: 'es',
+      name: 'Geocoder',
+    },
+    plugins: [
+      nodeResolve(),
+      commonjs({
+        exclude: 'src/**',
+        include: 'node_modules/**',
+      }),
+      json({ exclude: 'node_modules/**' }),
+    ],
+  },
 ];
