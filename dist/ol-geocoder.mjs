@@ -2,7 +2,7 @@
  * ol-geocoder - v4.1.2
  * A geocoder extension for OpenLayers.
  * https://github.com/jonataswalker/ol-geocoder
- * Built: Wed Dec 29 2021 18:15:07 GMT+0100 (Central European Standard Time)
+ * Built: Sat Jan 01 2022 22:39:19 GMT+0100 (Central European Standard Time)
  */
 
 import Control from 'ol/control/Control';
@@ -12,7 +12,7 @@ import LayerVector from 'ol/layer/Vector';
 import SourceVector from 'ol/source/Vector';
 import Point from 'ol/geom/Point';
 import Feature from 'ol/Feature';
-import proj from 'ol/proj';
+import { transform, transformExtent } from 'ol/proj';
 
 var containerId = "gcd-container";
 var buttonControlId = "gcd-button-control";
@@ -774,6 +774,7 @@ function jsonp(url, key, callback) {
 }
 
 const klasses$1 = VARS.cssClasses;
+const proj = { transform, transformExtent };
 
 /**
  * @class Nominatim
@@ -925,12 +926,51 @@ class Nominatim {
 
   createList(response) {
     const ul = this.els.result;
+
+    response.forEach((row) => {
+      let addressHtml;
+
+      switch (this.options.provider) {
+        case PROVIDERS.OSM:
+          addressHtml = `<span class="${klasses$1.road}">${row.address.name}</span>`;
+
+          break;
+
+        default:
+          addressHtml = this.addressTemplate(row.address);
+      }
+
+      const html = `<a href="#">${addressHtml}</a>`;
+      const li = createElement('li', html);
+
+      li.addEventListener(
+        'click',
+        (evt) => {
+          evt.preventDefault();
+          this.chosen(row, addressHtml, row.address, row.original);
+        },
+        false
+      );
+
+      ul.append(li);
+    });
+  }
+
+  chosen(place, addressHtml, addressObj, addressOriginal) {
+    const map = this.Base.getMap();
+    const coord_ = [Number.parseFloat(place.lon), Number.parseFloat(place.lat)];
+    const projection = map.getView().getProjection();
+    const coord = proj.transform(coord_, 'EPSG:4326', projection);
+
+    let { bbox } = place;
+
+    if (bbox) {
       bbox = proj.transformExtent(
         [bbox[2], bbox[1], bbox[3], bbox[0]], // NSWE -> WSEN
         'EPSG:4326',
         projection
       );
-    
+    }
 
     const address = {
       formatted: addressHtml,
@@ -1095,8 +1135,6 @@ class Base extends Control {
    * @param {object} options Options.
    */
   constructor(type = CONTROL_TYPE.NOMINATIM, options = {}) {
-    if (!(this instanceof Base)) return new Base();
-
     assert(typeof type === 'string', '@param `type` should be string!');
     assert(
       type === CONTROL_TYPE.NOMINATIM || type === CONTROL_TYPE.REVERSE,
@@ -1104,25 +1142,32 @@ class Base extends Control {
       or '${CONTROL_TYPE.REVERSE}'!`
     );
     assert(typeof options === 'object', '@param `options` should be object!');
-
     DEFAULT_OPTIONS.featureStyle = [
       new Style({ image: new Icon({ scale: 0.7, src: FEATURE_SRC }) }),
     ];
 
-    this.options = mergeOptions(DEFAULT_OPTIONS, options);
-    this.container = undefined;
+    options = mergeOptions(DEFAULT_OPTIONS, options);
 
-    let $nominatim;
+    let container;
 
-    const $html = new Html(this);
+    const $html = new Html({ options });
 
     if (type === CONTROL_TYPE.NOMINATIM) {
-      this.container = $html.els.container;
-      $nominatim = new Nominatim(this, $html.els);
+      container = $html.els.container;
+    }
+
+    super({ element: container });
+    this.options = options;
+    this.container = container;
+
+    if (type === CONTROL_TYPE.NOMINATIM) {
+      let $nominatim = new Nominatim(this, $html.els);
       this.layer = $nominatim.layer;
     }
 
-    super({ element: this.container });
+    if (!(this instanceof Base)) return new Base();
+
+
   }
 
   /**

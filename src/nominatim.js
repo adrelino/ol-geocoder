@@ -2,7 +2,7 @@ import LayerVector from 'ol/layer/Vector';
 import SourceVector from 'ol/source/Vector';
 import Point from 'ol/geom/Point';
 import Feature from 'ol/Feature';
-import proj from 'ol/proj';
+import { transform, transformExtent } from 'ol/proj';
 
 import { VARS, TARGET_TYPE, PROVIDERS, EVENT_TYPE } from '../konstants';
 
@@ -23,6 +23,7 @@ import { randomId, flyTo } from './helpers/mix';
 import { json } from './helpers/ajax';
 
 const klasses = VARS.cssClasses;
+const proj = { transform, transformExtent };
 
 /**
  * @class Nominatim
