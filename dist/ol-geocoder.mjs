@@ -1,3 +1,4 @@
+//@ts-nocheck
 /*!
  * ol-geocoder - v4.1.2
  * A geocoder extension for OpenLayers.
