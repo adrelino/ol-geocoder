@@ -463,7 +463,7 @@ class OpenStreet {
    */
   constructor() {
     this.settings = {
-      url: 'https://nominatim.openstreetmap.org/search/',
+      url: 'https://nominatim.openstreetmap.org/search',
 
       params: {
         q: '',
